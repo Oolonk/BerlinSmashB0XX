@@ -1,3 +1,5 @@
+
+
 /*
   DIYB0XXNativeUSB v1.208 code by Crane.
   This code utilizes
@@ -74,7 +76,8 @@ enum game
   Melee,
   PM,
   Ultimate,
-  RoA
+  RoA,
+  FGC
 };
 
 enum device
@@ -139,7 +142,6 @@ int X = A1;
 int B = A2;
 
 
-
 int LED_r = 3;
 int LED_g = 5;
 int LED_b = 6;
@@ -186,7 +188,7 @@ pinMode(LED_b, OUTPUT);
   }
   USBCON|=(1<<OTGPADE);
 
-    if (USBSTA&(1<<VBUS)) {
+    if (digitalRead(MODX) == LOW) {
     currentDevice = PC;
   }
 
@@ -194,6 +196,13 @@ pinMode(LED_b, OUTPUT);
     currentDevice = Keeb;
   }
 
+  if ( digitalRead(UP) == LOW) {
+    currentGame = FGC;
+    currentSOCD = TwoIP;
+    LED_value_r = 0;
+    LED_value_g = 255;
+    LED_value_b = 0;
+  }
   if (currentDevice == PC) {
     Joystick.begin(false);
     Joystick.setXAxisRange(0, 255);
@@ -222,9 +231,9 @@ pinMode(LED_b, OUTPUT);
   {
     currentGame = PM;
     currentSOCD = TwoIPNoReactivate;
-    LED_value_r = 59;
-    LED_value_g = 229;
-    LED_value_b = 164;
+    LED_value_r = 50;
+    LED_value_g = 215;
+    LED_value_b = 155;
   }
   if (digitalRead(Z) == LOW)
   {
@@ -241,6 +250,7 @@ void loop() {
   analogWrite(LED_r, LED_value_r); // blau einschalten
   analogWrite(LED_g, LED_value_g); // blau ausschalten
   analogWrite(LED_b, LED_value_b); // rot einschalten
+  
   bool isL           = (digitalRead(L) == LOW);
   bool isLEFT        = (digitalRead(LEFT) == LOW);
   bool isDOWN        = (digitalRead(DOWN) == LOW);
@@ -284,6 +294,11 @@ void loop() {
   controllerState.c_right = isCRIGHT;
   controllerState.c_left = isCLEFT;
   controllerState.c_up = isCUP;
+  if(isLightShieldButtons == true){
+  controllerState.e_1 = isLIGHTSHIELD;
+  controllerState.e_2 = isMIDSHIELD;
+    
+    }
 
   bool isDPADUP = false;
   bool isDPADDOWN = false;
@@ -312,24 +327,42 @@ void loop() {
       isUP = isMODX;
 
     if (currentSOCD == TwoIPNoReactivate) {
+      if(currentGame != FGC){
       controlX = fTwoIPNoReactivate(isLEFT, isRIGHT, wasLEFT, wasRIGHT, lockLEFT, lockRIGHT);
       controlY = fTwoIPNoReactivate(isDOWN, isUP, wasDOWN, wasUP, lockDOWN, lockUP);
       cstickX = fTwoIPNoReactivate(isCLEFT, isCRIGHT, wasCLEFT, wasCRIGHT, lockCLEFT, lockCRIGHT);
       cstickY = fTwoIPNoReactivate(isCDOWN, isCUP, wasCDOWN, wasCUP, lockCDOWN, lockCUP);
+      } else{
+      controlX = fTwoIPNoReactivate(isLEFT, isRIGHT, wasLEFT, wasRIGHT, lockLEFT, lockRIGHT);
+      controlY = fTwoIPNoReactivate(isDOWN, isMODX, wasDOWN, wasUP, lockDOWN, lockUP);
+        
+        }
     }
 
     if (currentSOCD == TwoIP){
+      if(currentGame != FGC){
       controlX = fTwoIP(isLEFT, isRIGHT, wasLEFT, wasRIGHT);
       controlY = fTwoIP(isDOWN, isUP, wasDOWN, wasUP);
       cstickX = fTwoIP(isCLEFT, isCRIGHT, wasCLEFT, wasCRIGHT);
       cstickY = fTwoIP(isCDOWN, isCUP, wasCDOWN, wasCUP);
+      } else{
+      controlX = fTwoIP(isLEFT, isRIGHT, wasLEFT, wasRIGHT);
+      controlY = fTwoIP(isDOWN, isMODX, wasDOWN, wasUP);
+        
+        }
     }
 
     if (currentSOCD == Neutral) {
+      if(currentGame != FGC){
       controlX = fNeutral(isLEFT, isRIGHT);
       controlY = fNeutral(isDOWN, isUP);
       cstickX = fNeutral(isCLEFT, isCRIGHT);
       cstickY = fNeutral(isCDOWN, isCUP);
+      } else{
+      controlX = fNeutral(isLEFT, isRIGHT);
+      controlY = fNeutral(isDOWN, isMODX);
+        
+      }
     }
 
     if (controlX != 128) {
@@ -717,7 +750,7 @@ if (currentDevice != Keeb) { // If Keyboard mode, disregard all modifier logic
 /********* PC Dinput Setup *********/
 
   if (currentDevice == PC) {
-    if (currentGame != RoA) {
+    if (currentGame != RoA && currentGame != FGC) {
       Joystick.setButton(0, isA);
       Joystick.setButton(1, isB);
       Joystick.setButton(2, isX);
@@ -750,6 +783,29 @@ if (currentDevice != Keeb) { // If Keyboard mode, disregard all modifier logic
       else
         Joystick.setThrottle(LLight);
     }
+    else if(currentGame == FGC){
+      Joystick.setButton(0, isB); //A Check
+      Joystick.setButton(1, isX); //B
+      Joystick.setButton(2, isR); //X
+      Joystick.setButton(3, isY); //Y
+      Joystick.setButton(4, isMIDSHIELD); //LB
+      Joystick.setButton(5, isLIGHTSHIELD); //RB
+      Joystick.setButton(6, isZ); //LT
+      Joystick.setButton(7, isUP); //RT
+      //Joystick.setButton(8, isSELECT); //Select
+      Joystick.setButton(9, isSTART); //Start
+      // Joystick.setButton(12, isMODX); //UP
+      // Joystick.setButton(13, isDOWN); //DOWN
+      // Joystick.setButton(14, isLEFT); //LEFT
+      // Joystick.setButton(15, isRIGHT); //RIGHT
+
+      Joystick.setXAxis(controlX);
+      Joystick.setYAxis(((controlY-128) * -1) + 128);
+      Joystick.setRxAxis(128);
+      Joystick.setRyAxis(128);
+
+      
+      }
     else {
       Joystick.setButton(0, isA); //A Check
       //Joystick.setButton(1, isHOME); //B
@@ -896,11 +952,19 @@ if (currentDevice != Keeb) { // If Keyboard mode, disregard all modifier logic
   }
   /********* GC Report *********/
   else {
+    if(currentGame != FGC){
     d.report.l = isL;
     d.report.start = isSTART;
     d.report.b = isB;
     d.report.x = isX;
-    d.report.z = isZ;
+    if(currentGame == RoA){
+      if(isZ == true || isLIGHTSHIELD ==true)
+        d.report.z = true;
+      else
+      d.report.z = false;
+    }else{
+     d.report.z = isZ;
+    }
     d.report.r = isR;
     d.report.y = isY;
     d.report.a = isA;
@@ -919,6 +983,29 @@ if (currentDevice != Keeb) { // If Keyboard mode, disregard all modifier logic
 
     if (currentGame == Melee)
       delayMicroseconds(7200);
+    }else{
+    d.report.l = isUP;
+    d.report.start = isSTART;
+    d.report.b = isB;
+    d.report.x = isY;
+    if(isLIGHTSHIELD == true || isMIDSHIELD == true){
+    d.report.z = true;
+    } else {
+    d.report.z = false;
+      }
+    d.report.r = isZ;
+    d.report.y = isR;
+    d.report.a = isX;
+
+    d.report.xAxis = controlX;
+    d.report.yAxis = controlY;
+    d.report.cxAxis = 128;
+    d.report.cyAxis = 128;
+    d.report.right = 0;
+    d.report.left = 0;
+    GamecubeConsole.write(d);
+      
+      }
   }
 }
 
